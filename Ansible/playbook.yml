@@ -1,303 +1,56 @@
-
-- name: Ansible Install Jenkins on Ubuntu18 Server
-  gather_facts: false
+- name: Install Jenkins on EC2 instance
   hosts: all
-  become: true
-  become_user: ubuntu
+  gather_facts: true
   vars:
-     ansible_python_interpreter: /usr/bin/python3.9
+    ansible_python_interpreter: /usr/bin/python3.8
+
   tasks:
-
-    - name: Check Hostname
-      command: hostname
-      register: hname
-
-    - debug: msg="{{ hname.stdout }}"
-
-    - name: Install Docker
+    - name: Set ansible_distribution fact
+      set_fact:
+       ansible_distribution: Ubuntu
+ 
+    - name: Download Jenkins WAR file
       become: true
-      apt:
-        name: docker.io
-        state: present
+      get_url:
+        url: "https://get.jenkins.io/war-stable/latest/jenkins.war"
+        dest: /opt/jenkins.war
 
-    - name: Install Docker Compose
+    - name: Create jenkins user
       become: true
-      apt:
-        name: docker-compose
-        state: present
+      command: useradd -m -s /bin/bash -r jenkins
+      ignore_errors: yes
 
-    - name: Install Jenkins Docker container
-      shell: |
-        sudo docker run -d \
-          -p 8080:8080 \
-          -p 50000:50000 \
-          -v jenkins_home:/var/jenkins_home \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          -v $(which docker):/usr/bin/docker \
-          jenkins/jenkins:lts
-      args:
-        executable: /bin/bash
+    - name: Set ownership and permissions for Jenkins WAR file
       become: true
+      file:
+        path: /opt/jenkins.war
+        owner: jenkins
+        group: jenkins
+        mode: "0644"
 
-    - name: Wait for Jenkins to start up
-      wait_for: 
-        port: 8080
-        timeout: 60
+    - name: Create systemd service file for Jenkins
+      become: true
+      template:
+        src: jenkins.service.j2
+        dest: /etc/systemd/system/jenkins.service
 
-    - name: Get Jenkins initial admin password
-      shell: |
-        sudo docker exec $(sudo docker ps -qf "name=jenkins") cat /var/jenkins_home/secrets/initialAdminPassword
-      args:
-        executable: /bin/bash
-      changed_when: false
-      register: result
+    - name: Reload systemd to load the new service file
+      become: true
+      systemd:
+        daemon_reload: yes
 
-    - name: Password to "Unlock Jenkins"
-      debug:
-        var: result.stdout
-
-
-
-# ---
-# - name: Ansible Install Jenkins on Ubuntu18 Server
-#   gather_facts: false
-#   hosts: all
-#   tasks:
-
-#     - name: Check Hostname
-#       command: hostname
-#       register: hname
-
-#     - debug: msg="{{ hname.stdout }}"
-
-#     # - name: Install python3-apt package
-#     #   become: true
-#     #   package:
-#     #     name: python3-apt
-#     #     state: present
-
-#     - name: Install key for the Jenkins apt repository
-#       become: true
-#       apt_key:
-#         url: "https://pkg.jenkins.io/debian/jenkins-ci.org.key"
-#         state: present
-
-#     - name: Install access to the Jenkins apt repository
-#       become: true
-#       apt_repository:
-#         repo: deb http://pkg.jenkins.io/debian-stable binary/
-#         state: present
-#         filename: 'jenkins-stable'
-
-#     - name: APT Update for the Jenkins repository
-#       become: true
-#       command: apt update
-
-#     - name: Install Jenkins package
-#       become: true
-#       apt:
-#         name: jenkins
-#         state: installed
-
-#     - name: Wait for Jenkins to start up
-#       wait_for: timeout=35
-
-#     - name: Get Jenkins password
-#       shell: cat /var/lib/jenkins/secrets/initialAdminPassword
-#       changed_when: false
-#       register: result
-
-#     - name: Password to "Unlock Jenkins"
-#       debug:
-#         var: result.stdout
-
-
-
-
-
-# ---
-# - name: Ansible Install Jenkins on Ubuntu18 Server
-#   gather_facts: false
-#   hosts: all
-#   tasks:
-
-#     - name: Check Hostname
-#       command: hostname
-#       register: hname
-
-#     - debug: msg="{{ hname.stdout }}"
-
-#     # - name: APT Update
-#     #   become: true
-#     #   command: apt update
-
-#     # - name: Install Java
-#     #   become: true
-#     #   command: apt install -y openjdk-11-jdk
-
-#     - name: Install key for the Jenkins apt repository
-#       apt_key:
-#         url: "https://pkg.jenkins.io/debian/jenkins-ci.org.key"
-#         state: present
-
-#     - name: Install access to the Jenkins apt repository
-#       apt_repository:
-#         repo: deb http://pkg.jenkins.io/debian-stable binary/
-#         state: present
-#         filename: 'jenkins-stable'
-
-#     - name: APT Update for the Jenkins repository
-#       command: apt update
-
-#     - name: Install Jenkins package
-#       apt:
-#         name: jenkins
-#         state: installed
-
-#     - name: Wait for Jenkins to start up
-#       wait_for: timeout=35
-
-#     - name: Get Jenkins password
-#       shell: cat /var/lib/jenkins/secrets/initialAdminPassword
-#       changed_when: false
-#       register: result
-
-#     - name: Password to "Unlock Jenkins"
-#       debug:
-#         var: result.stdout
-
-# ansible-playbook -i inventory -u ubuntu --private-key= /home/ismail/.ssh/id_rsa playbook.yml
-
-
-
-
-
-
-
-
-# - name: Install Jenkins on EC2 instance
-#   hosts: all
-#   gather_facts: true
-#   vars:
-#     ansible_python_interpreter: /usr/bin/python3
-
-#   tasks:
-
-#     - name: Download Jenkins WAR file
-#       become: true
-#       get_url:
-#         url: "https://get.jenkins.io/war-stable/latest/jenkins.war"
-#         dest: /opt/jenkins.war
-
-#     - name: Create jenkins user
-#       become: true
-#       user:
-#         name: jenkins
-#         shell: /bin/bash
-#         system: yes
-
-#     - name: Set ownership and permissions for Jenkins WAR file
-#       become: true
-#       file:
-#         path: /opt/jenkins.war
-#         owner: jenkins
-#         group: jenkins
-#         mode: "0644"
-
-#     - name: Create systemd service file for Jenkins
-#       become: true
-#       template:
-#         src: jenkins.service.j2
-#         dest: /etc/systemd/system/jenkins.service
-
-#     - name: Reload systemd to load the new service file
-#       become: true
-#       systemd:
-#         daemon_reload: yes
-
-#     - name: Start Jenkins service
-#       become: true
-#       service:
-#         name: jenkins
-#         state: started
-#         enabled: yes
-
-#     - name: Wait for Jenkins to start
-#       wait_for:
-#         port: 8080
-#         state: started
-
-
-
-
-# - name: Install Jenkins on EC2 instance
-#   hosts: all
-#   gather_facts: true
-#   vars:
-#     ansible_python_interpreter: /usr/bin/python3.9
-
-
-  # tasks:
-    # - name: Install Java
-    #   apt:
-    #     name: openjdk-17-jdk
-    #     state: present
-
-    # - name: Add Jenkins repository key
-    #   apt_key:
-    #     url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
-    #     state: present
-    # - name: Update apt package cache
-    #   apt:
-    #     update_cache: yes
-
-    # - name: Add Jenkins repository
-    #   apt_repository:
-    #     repo: https://pkg.jenkins.io/debian-stable
-    #     state: present
-    # - name: Add Jenkins repository
-    #   apt_repository:
-    #     repo: https://pkg.jenkins.io/debian-stable
-    #     state: present
-    #     filename: jenkins.io
-
-
-
-    # - name: Install Jenkins
-    #   apt:
-    #     name: jenkins
-    #     state: present
-
-    # - name: Start Jenkins service
-    #   service:
-    #     name: jenkins
-    #     state: started
-    #     enabled: yes
+    - name: Start Jenkins service
+      become: true
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
 
     # - name: Wait for Jenkins to start
     #   wait_for:
+    #     host: all
     #     port: 8080
     #     state: started
+    #     timeout: 300
 
-    # - name: Install Jenkins plugins
-    #   jenkins_plugin:
-    #     name: "{{ item }}"
-    #     version: latest
-    #     timeout: 120
-    #   loop:
-    #     - plugin1
-    #     - plugin2
-    #     # Add more plugins as needed    
-
-    # - name: Trigger Jenkins Job
-    #   uri:
-    #     url: http://localhost:8080/job/build-and-push-docker-image/build?token=TOKEN_NAME
-    #     method: POST
-    #   async: 60
-    #   poll: 0
-
-
-    # Additional tasks to configure Jenkins and install plugins can be added here
-
-
-#ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory -u ubuntu --private-key=/var/jenkins_home/.ssh/id_rsa playbook.yml
+        
