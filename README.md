@@ -23,10 +23,10 @@
 #####    - make network policy to ensure security best practice between pods
 
 ### 5- Jenkins:
-#####   - create multi-branch pipeline to make build on every push on dev,test,prod github branches
-#####   - pipeline stages:
-#######       - build dockerfile in the repo
-#######       - push it to ECR
-#######       - deploy new image to kubernates pods
+####   - create multi-branch pipeline to make build on every push on dev,test,prod github branches
+####   - pipeline stages:
+#####       - build dockerfile in the repo
+#####       - push it to ECR
+#####       - deploy new image to kubernates pods
 
 
