@@ -1,0 +1,17 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-frontend-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: counter-app-backend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: counter-app-frontend
+  policyTypes:
+  - Ingress
+
