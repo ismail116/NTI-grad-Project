@@ -26,10 +26,10 @@ pipeline {
                     sh "echo '${awsPassword}' | docker login --username AWS --password-stdin 949609334280.dkr.ecr.us-east-1.amazonaws.com"
 
                     // Tag the image
-                    sh 'docker tag myapp:latest 949609334280.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repository:latest'  // Corrected tag
+                    sh 'docker tag myapp:latest 949609334280.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repository:latest'  
 
                     // Push the image to ECR
-                    sh 'docker push 949609334280.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repository:latest'  // Corrected tag
+                    sh 'docker push 949609334280.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repository:latest' 
                 }
             }
         }
