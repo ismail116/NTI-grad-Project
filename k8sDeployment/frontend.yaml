@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: counter-app-frontend
-          image: menna55555/counter-app-frontend:latest
+          image: 949609334280.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repository:latest
           ports:
             - containerPort: 80
 
